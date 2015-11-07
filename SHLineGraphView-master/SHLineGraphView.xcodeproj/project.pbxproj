@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		53C36B0F1BEDF5D1004036E5 /* 折线图__低于平均值.png in Resources */ = {isa = PBXBuildFile; fileRef = 53C36B0D1BEDF5D1004036E5 /* 折线图__低于平均值.png */; };
+		53C36B101BEDF5D1004036E5 /* 折线图__高于平均值.png in Resources */ = {isa = PBXBuildFile; fileRef = 53C36B0E1BEDF5D1004036E5 /* 折线图__高于平均值.png */; };
 		F259AE0018DE03060070E137 /* SHRootController.m in Sources */ = {isa = PBXBuildFile; fileRef = F259ADFF18DE03060070E137 /* SHRootController.m */; };
 		F266044118DDF5210084DCEF /* SHPlot.m in Sources */ = {isa = PBXBuildFile; fileRef = F266044018DDF5210084DCEF /* SHPlot.m */; };
 		F2F9135B18D3E8B8002D6919 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2F9135A18D3E8B8002D6919 /* Foundation.framework */; };
@@ -36,6 +38,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		53C36B0D1BEDF5D1004036E5 /* 折线图__低于平均值.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "折线图__低于平均值.png"; sourceTree = "<group>"; };
+		53C36B0E1BEDF5D1004036E5 /* 折线图__高于平均值.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "折线图__高于平均值.png"; sourceTree = "<group>"; };
 		F259ADFE18DE03060070E137 /* SHRootController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SHRootController.h; sourceTree = "<group>"; };
 		F259ADFF18DE03060070E137 /* SHRootController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SHRootController.m; sourceTree = "<group>"; };
 		F266043F18DDF5210084DCEF /* SHPlot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SHPlot.h; sourceTree = "<group>"; };
@@ -95,6 +99,8 @@
 				F2F9137918D3E8B8002D6919 /* SHLineGraphViewTests */,
 				F2F9135918D3E8B8002D6919 /* Frameworks */,
 				F2F9135818D3E8B8002D6919 /* Products */,
+				53C36B0D1BEDF5D1004036E5 /* 折线图__低于平均值.png */,
+				53C36B0E1BEDF5D1004036E5 /* 折线图__高于平均值.png */,
 			);
 			sourceTree = "<group>";
 		};
@@ -252,6 +258,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				53C36B101BEDF5D1004036E5 /* 折线图__高于平均值.png in Resources */,
+				53C36B0F1BEDF5D1004036E5 /* 折线图__低于平均值.png in Resources */,
 				F2F9136518D3E8B8002D6919 /* InfoPlist.strings in Resources */,
 				F2F9136D18D3E8B8002D6919 /* Images.xcassets in Resources */,
 			);

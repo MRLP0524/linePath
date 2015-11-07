@@ -21,19 +21,21 @@
 // SOFTWARE.
 
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
+#import <UIKit/UIKit.h>
 
 @interface SHPlot : NSObject
 
 /**
- *  Array of dictionaries, where the key is the same as the one which you specified in the `xAxisValues` in `SHLineGraphView`, 
- *  the value is the number which will determine the point location along the y-axis line. make sure the values are not 
+ *  Array of dictionaries, where the key is the same as the one which you specified in the `xAxisValues` in `SHLineGraphView`,
+ *  the value is the number which will determine the point location along the y-axis line. make sure the values are not
  *  greater than the `yAxisRange` specified in `SHLineGraphView`.
  */
-@property (nonatomic, strong) NSArray *plottingValues;
-
+@property (nonatomic, strong) NSArray *plottingValues;      //数值点的第一个数组
+@property (nonatomic, strong) NSArray *plottingValues_two;  //数值点的第二个数组
 /**
  *  this is an optional array of `NSString` that specifies the labels to show on the particular points. when user clicks on
- *  a particular points, a popover view is shown and will show the particular label on for that point, that is specified 
+ *  a particular points, a popover view is shown and will show the particular label on for that point, that is specified
  *  in this array.
  */
 @property (nonatomic, strong) NSArray *plottingPointsLabels;

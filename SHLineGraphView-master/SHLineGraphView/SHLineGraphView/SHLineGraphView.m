@@ -28,12 +28,15 @@
 
 #define BOTTOM_MARGIN_TO_LEAVE 30.0
 #define TOP_MARGIN_TO_LEAVE 30.0
-#define INTERVAL_COUNT 9
-#define PLOT_WIDTH (self.bounds.size.width - _leftMarginToLeave)
-
+#define PLOT_WIDTH  (self.bounds.size.width  - _leftMarginToLeave)
+#define PLOT_HEIGHT (self.bounds.size.height - TOP_MARGIN_TO_LEAVE)
 #define kAssociatedPlotObject @"kAssociatedPlotObject"
 
-
+@interface SHLineGraphView ()
+@property(nonatomic,assign) CGFloat *x;
+@property(nonatomic,assign) CGFloat *y;
+@property(nonatomic,assign) double value_y;
+@end
 @implementation SHLineGraphView
 {
     float _leftMarginToLeave;
@@ -93,6 +96,7 @@
 
 - (void)drawPlotWithPlot:(SHPlot *)plot {
     //draw y-axis labels. this has to be done first, so that we can determine the left margin to leave according to the
+    
     //y-axis lables.
     [self drawYLabels:plot];
     
@@ -125,6 +129,7 @@
     }
     return -1;
 }
+
 //绘制点的方法
 - (void)drawPlot:(SHPlot *)plot {
     
@@ -159,15 +164,20 @@
     [graphLayer setLineWidth:((NSNumber *)theme[kPlotStrokeWidthKey]).intValue];
     //构造路径(CGPathCreateMutable) 一系列点放在一起,构成了一个形状。一系列的形状放在一起,构成了一个路径
     CGMutablePathRef graphPath = CGPathCreateMutable();
+    
+    //=======================================================================================================
     //Y轴坐标的数值
-    double yRange = [_yAxisRange doubleValue]; // this value will be in dollars
+    double yRange = [_yAxisRange doubleValue] - [_startYAxisRange doubleValue]; // this value will be in dollars
     //Y轴之间文字之间的间距
-    double yIntervalValue = yRange / INTERVAL_COUNT;
-
+    double yIntervalValue = yRange / [_COUNT_IN_Y doubleValue];
+    //=======================================================================================================
+    //
+    //                                        第一个折线图
+    //
+    //=======================================================================================================
     //逻辑填充图的路径，圈层的路径，后台的路径。
     [plot.plottingValues enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         NSDictionary *dic = (NSDictionary *)obj;
-        
         __block NSNumber *_key = nil;
         __block NSNumber *_value = nil;
         
@@ -175,38 +185,128 @@
             _key = (NSNumber *)key;
             _value = (NSNumber *)obj;
         }];
+        _value_y = [_value doubleValue] - [_startYAxisRange doubleValue];
         //当前具体的点的个数
         int xIndex = [self getIndexForValue:_key forPlot:plot];
+        
         //x value
-        double height = self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE;
-        double y = height - ((height / ([_yAxisRange doubleValue] + yIntervalValue)) * [_value doubleValue]);
+        double height = self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE;   //绘制折线图画布的最大高度
+        double y = height - ((height / ([_yAxisRange doubleValue] - [_startYAxisRange doubleValue]+ yIntervalValue)) * _value_y);
+        
+        //        NSLog(@"============================%.1f",[_yAxisRange doubleValue] - [_startYAxisRange doubleValue]);
+        //        NSLog(@"_value:                     %@",_value);
+        //        NSLog(@"_value_y:                   %.1f",_value_y);
+        //        NSLog(@"xIndex:                     %d",xIndex);
+        //        NSLog(@"height:                     %.1f",height);
+        //        NSLog(@"y:                          %.1f",y);
+        //        NSLog(@"=========================");
+        
         //点的具体位置坐标
         (plot.xPoints[xIndex]).x = ceil((plot.xPoints[xIndex]).x);
         (plot.xPoints[xIndex]).y = ceil(y);
+        
+        //设置一个最大值,超过这个最大值则更改图标
+        double max_Y_Value = [_MAX_Range_1 doubleValue];
+        //设置一个最小值,小于这个最小值则更改图标
+        double min_Y_Value = [_MIN_Range_1 doubleValue];
+        
+        if (_value_y > max_Y_Value) {
+            CALayer * imageLayer = [CALayer layer];
+            imageLayer.contents = (id)[UIImage imageNamed:@"折线图__高于平均值.png"].CGImage;
+            //设置layer的区域
+            imageLayer.bounds = CGRectMake(0, 0, 13, 13);
+            //设置layer坐标
+            imageLayer.position = CGPointMake((plot.xPoints[xIndex]).x, (plot.xPoints[xIndex]).y);
+            [circleLayer addSublayer:imageLayer];
+        }
+        if (_value_y < min_Y_Value) {
+            CALayer * imageLayer = [CALayer layer];
+            imageLayer.contents = (id)[UIImage imageNamed:@"折线图__低于平均值.png"].CGImage;
+            //设置layer的区域
+            imageLayer.bounds = CGRectMake(0, 0, 13, 13);
+            //设置layer坐标
+            imageLayer.position = CGPointMake((plot.xPoints[xIndex]).x, (plot.xPoints[xIndex]).y);
+            [circleLayer addSublayer:imageLayer];
+        }
     }];
+    //=======================================================================================================
+    //
+    //                                        第二个折线图
+    //
+    //=======================================================================================================
+    //逻辑填充图的路径，圈层的路径，后台的路径。
+    [plot.plottingValues_two enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        NSDictionary *dic = (NSDictionary *)obj;
+        __block NSNumber *_key = nil;
+        __block NSNumber *_value = nil;
+        
+        [dic enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+            _key = (NSNumber *)key;
+            _value = (NSNumber *)obj;
+        }];
+        _value_y = [_value doubleValue] - [_startYAxisRange doubleValue];
+        
+        //当前具体的点的个数
+        int xIndex = [self getIndexForValue:_key forPlot:plot];
+        
+        //x value
+        double height = self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE;   //绘制折线图画布的最大高度
+        
+        double y = height - ((height / ([_yAxisRange doubleValue] - [_startYAxisRange doubleValue]+ yIntervalValue)) * _value_y);
+        
+        //点的具体位置坐标
+        (plot.xPoints[xIndex]).x = ceil((plot.xPoints[xIndex]).x);
+        (plot.xPoints[xIndex]).y = ceil(y);
+        
+        //设置一个最大值,超过这个最大值则更改图标
+        double max_Y_Value = [_MAX_Range_2 doubleValue];
+        //设置一个最小值,小于这个最小值则更改图标
+        double min_Y_Value = [_MIN_Range_2 doubleValue];
+        
+        if (_value_y> max_Y_Value) {
+            CALayer * imageLayer = [CALayer layer];
+            imageLayer.contents = (id)[UIImage imageNamed:@"折线图__高于平均值.png"].CGImage;
+            //设置layer的区域
+            imageLayer.bounds = CGRectMake(0, 0, 13, 13);
+            //设置layer坐标
+            imageLayer.position = CGPointMake((plot.xPoints[xIndex]).x, (plot.xPoints[xIndex]).y);
+            [circleLayer addSublayer:imageLayer];
+        }
+        if (_value_y < min_Y_Value) {
+            CALayer * imageLayer = [CALayer layer];
+            imageLayer.contents = (id)[UIImage imageNamed:@"折线图__低于平均值.png"].CGImage;
+            //设置layer的区域
+            imageLayer.bounds = CGRectMake(0, 0, 13, 13);
+            //设置layer坐标
+            imageLayer.position = CGPointMake((plot.xPoints[xIndex]).x, (plot.xPoints[xIndex]).y);
+            [circleLayer addSublayer:imageLayer];
+        }
+    }];
+    //=======================================================================================================
+    //    移动到初始点的路径和背景。
+    CGPathMoveToPoint(graphPath, NULL, (plot.xPoints[0]).x, plot.xPoints[0].y);
+    CGPathMoveToPoint(backgroundPath, NULL, (plot.xPoints[0]).x, plot.xPoints[0].y);
     
-    //移动到初始点的路径和背景。
-    CGPathMoveToPoint(graphPath, NULL, _leftMarginToLeave, plot.xPoints[0].y);
-    CGPathMoveToPoint(backgroundPath, NULL, _leftMarginToLeave, plot.xPoints[0].y);
     //具体点的个数
-    int count = _xAxisValues.count;
+    int count = (int)_xAxisValues.count;
     for(int i=0; i< count; i++){
         CGPoint point = plot.xPoints[i];
         //点的线路的开始位置
         CGPathAddLineToPoint(graphPath, NULL, point.x, point.y);
         CGPathAddLineToPoint(backgroundPath, NULL, point.x, point.y);
         //点的位置和大小
-        CGPathAddEllipseInRect(circlePath, NULL, CGRectMake(point.x - 5, point.y - 5, 10, 10));
+        CGPathAddEllipseInRect(circlePath, NULL, CGRectMake(point.x - 3, point.y - 3, 6, 6));
+        
+        //移动结束点的路径和背景。
+        //        CGPathAddLineToPoint(graphPath, NULL, (plot.xPoints[count - 1]).x , plot.xPoints[count -1].y);
+        CGPathAddLineToPoint(backgroundPath, NULL,(plot.xPoints[count - 1]).x, self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
+        
+        
+        //背景附加点的位置和坐标
+        CGPathAddLineToPoint(backgroundPath, NULL, (plot.xPoints[0]).x + PLOT_WIDTH , self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
+        CGPathAddLineToPoint(backgroundPath, NULL, (plot.xPoints[0]).x, self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
+        CGPathCloseSubpath(backgroundPath);
     }
-    
-    //移动结束点的路径和背景。
-    CGPathAddLineToPoint(graphPath, NULL, _leftMarginToLeave + PLOT_WIDTH , plot.xPoints[count -1].y);
-    CGPathAddLineToPoint(backgroundPath, NULL, _leftMarginToLeave + PLOT_WIDTH, plot.xPoints[count - 1].y);
-    
-    //背景附加点的位置和坐标
-    CGPathAddLineToPoint(backgroundPath, NULL, _leftMarginToLeave + PLOT_WIDTH , self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
-    CGPathAddLineToPoint(backgroundPath, NULL, _leftMarginToLeave, self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
-    CGPathCloseSubpath(backgroundPath);
     
     backgroundLayer.path = backgroundPath;
     graphLayer.path = graphPath;
@@ -226,24 +326,10 @@
     [self.layer addSublayer:graphLayer];
     [self.layer addSublayer:circleLayer];
     [self.layer addSublayer:backgroundLayer];
-    //附加的 button 的位置和点击事件
-    NSUInteger count2 = _xAxisValues.count;
-    for(int i=0; i< count2; i++){
-        CGPoint point = plot.xPoints[i];
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
-        btn.backgroundColor = [UIColor clearColor];
-        btn.tag = i;
-        btn.frame = CGRectMake(point.x - 20, point.y - 20, 40, 40);
-        [btn addTarget:self action:@selector(clicked:) forControlEvents:UIControlEventTouchUpInside];
-        objc_setAssociatedObject(btn, kAssociatedPlotObject, plot, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        
-        [self addSubview:btn];
-    }
 }
-
 - (void)drawXLabels:(SHPlot *)plot {
     //获取横坐标个数
-    int xIntervalCount = _xAxisValues.count;
+    NSUInteger xIntervalCount = _xAxisValues.count;
     //获取每一个数值之间的间距为多少像素
     double xIntervalInPx = PLOT_WIDTH / _xAxisValues.count;
     //初始化点的位置将为的实际的点的位置数值
@@ -275,18 +361,13 @@
 }
 
 - (void)drawYLabels:(SHPlot *)plot {
-    double yRange = [_yAxisRange doubleValue]; // this value will be in dollars
-    //!!!: 在这里修改具体参数
-    double yIntervalValue = yRange / 20;
-    double intervalInPx = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE ) / (INTERVAL_COUNT +1);
-    //!!!:标识的距离
+    double yIntervalValue = [_PX_IN_Y doubleValue];
+    double intervalInPx = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE ) / ([_COUNT_IN_Y doubleValue] +1);
     NSMutableArray *labelArray = [NSMutableArray array];
     float maxWidth = 0;
-    //!!!: 标识的个数
-    for(int i= INTERVAL_COUNT + 1; i >= 0; i--){
+    for(int i= [_COUNT_IN_Y doubleValue] + 1; i >= 0; i--){
         CGPoint currentLinePoint = CGPointMake(_leftMarginToLeave, i * intervalInPx);
         CGRect lableFrame = CGRectMake(0, currentLinePoint.y - (intervalInPx / 2), 100, intervalInPx);
-        
         if(i != 0) {
             //竖轴左侧提示性文字
             UILabel *yAxisLabel = [[UILabel alloc] initWithFrame:lableFrame];
@@ -295,10 +376,10 @@
             yAxisLabel.textColor = (UIColor *)_themeAttributes[kYAxisLabelColorKey];
             yAxisLabel.textAlignment = NSTextAlignmentCenter;
             //竖轴显示具体数值
-            float val = (yIntervalValue * (10 - i));
+            float val = (yIntervalValue * ([_COUNT_IN_Y doubleValue] + 1 - i)) + [_startYAxisRange doubleValue];
             if(val > 0){
                 //如果数值是大于0的话,后面跟上具体的参数单位
-                yAxisLabel.text = [NSString stringWithFormat:@"%.1f%@", val, _yAxisSuffix];
+                yAxisLabel.text = [NSString stringWithFormat:@"%.1f", val];
             } else {
                 //等于0时,不带参数坐标
                 yAxisLabel.text = [NSString stringWithFormat:@"%.0f", val];
@@ -324,7 +405,17 @@
         newFrame.size = newSize;
         l.frame = newFrame;
     }
+    UILabel *unit_Label = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, 0, 0)];
+    unit_Label.backgroundColor = [UIColor clearColor];
+    unit_Label.text = [NSString stringWithFormat:@"%@",_yAxisSuffix];
+    unit_Label.font = [UIFont systemFontOfSize:12];
+    [unit_Label sizeToFit];
+    CGRect newUnitFrame = CGRectMake(0, 0, 60, 20);
+    unit_Label.textAlignment = NSTextAlignmentCenter;
+    unit_Label.frame = newUnitFrame;
+    [self addSubview:unit_Label];
 }
+
 //绘制线
 - (void)drawLines:(SHPlot *)plot {
     //线的图层
@@ -337,8 +428,8 @@
     
     CGMutablePathRef linesPath = CGPathCreateMutable();
     //每条线之间的间距
-    double intervalInPx = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE) / (INTERVAL_COUNT + 1);
-    for(int i= INTERVAL_COUNT + 1; i > 0; i--){
+    double intervalInPx = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE) / ([_COUNT_IN_Y doubleValue] + 1);
+    for(int i= [_COUNT_IN_Y doubleValue] + 1; i > 0; i--){
         //将对应点的数值转换为具体的坐标
         CGPoint currentLinePoint = CGPointMake(_leftMarginToLeave, (i * intervalInPx));
         //绘制横线的起点
@@ -347,29 +438,42 @@
         CGPathAddLineToPoint(linesPath, NULL, currentLinePoint.x + PLOT_WIDTH, currentLinePoint.y);
     }
     
+    
+    
+    
+    
+    
+    //    double yRange = [_yAxisRange doubleValue];
+    //    int i = 0;
+    //    i = (90)/yRange;
+    //    CGPoint LinePoint = CGPointMake(_leftMarginToLeave, (i * intervalInPx));
+    //    NSLog(@"%f",intervalInPx);
+    //    CGPathMoveToPoint(linesPath, NULL, LinePoint.x +20, LinePoint.y + 20);
+    //    CGPathAddLineToPoint(linesPath, NULL, LinePoint.x +20+ BOTTOM_MARGIN_TO_LEAVE, LinePoint.y + 20);
+    
+    
+    
     //获取横坐标个数
-    int xIntervalCount = _xAxisValues.count;
+    NSInteger xIntervalCount = _xAxisValues.count;
     //获取每一个数值之间的间距为多少像素
     double xIntervalInPx = PLOT_WIDTH / _xAxisValues.count;
     
-    double intervalInPx1 = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE ) / (INTERVAL_COUNT+1) *INTERVAL_COUNT;
+    double intervalInPx1 = (self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE ) / ([_COUNT_IN_Y doubleValue]+1) *[_COUNT_IN_Y doubleValue];
     
     //根据点的个数进行循环
     for(int i=0; i < xIntervalCount; i++){
         //第一个点的初始位置
         CGPoint currentLabelPoint = CGPointMake((xIntervalInPx * i) + _leftMarginToLeave , self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE);
         
-        
-        
         //绘制横线的起点
         CGPathMoveToPoint(linesPath, NULL, currentLabelPoint.x + xIntervalInPx/2 , currentLabelPoint.y);
         //绘制横线的距离长度
         CGPathAddLineToPoint(linesPath, NULL, currentLabelPoint.x + xIntervalInPx/2, currentLabelPoint.y - intervalInPx1);
-       
+        
     }
-    //绘制横线的起点
+    //绘制竖轴的起点
     CGPathMoveToPoint(linesPath, NULL,_leftMarginToLeave ,BOTTOM_MARGIN_TO_LEAVE);
-    //绘制横线的距离长度
+    //绘制竖轴的距离长度
     CGPathAddLineToPoint(linesPath, NULL,_leftMarginToLeave ,self.bounds.size.height - BOTTOM_MARGIN_TO_LEAVE );
     
     
